@@ -1,0 +1,24 @@
+# Node modules
+node_modules/
+
+# TypeScript output
+dist/
+*.tsbuildinfo
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Systemy / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Test coverage
+coverage/
+
+# Optional: environment files
+.env
+.env.local
