@@ -9,7 +9,12 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["node"]
+    "types": ["node", "jest"]
   },
-  "include": ["*.ts", "**/*.ts"]
+  "include": [
+    "*.ts", // pliki w root
+    "lib/**/*.ts", // pliki w lib
+    "template/**/!(*node_modules)/**/*.ts" // wszystkie TS w template poza node_modules
+  ],
+  "exclude": ["node_modules", "dist", "**/node_modules/**"]
 }

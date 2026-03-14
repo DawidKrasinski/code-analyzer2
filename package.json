@@ -1,10 +1,20 @@
 {
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^25.5.0",
+    "jest": "^30.3.0",
+    "ts-jest": "^29.4.6",
     "typescript": "^5.9.3"
   },
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "npm run build && npm --prefix ./template run dev",
+    "test": "jest --watch"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.29.0",
+    "@babel/traverse": "^7.29.0",
+    "@babel/types": "^7.29.0",
+    "directory-tree": "^3.6.0"
   }
 }
