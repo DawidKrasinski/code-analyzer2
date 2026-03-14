@@ -8,7 +8,7 @@ type RelationType =
   | "composition"
   | "dependency";
 
-interface UMLNode {
+export interface UMLNode {
   id: string;
   name: string;
   type: "class" | "interface" | "abstract";
@@ -16,7 +16,7 @@ interface UMLNode {
   methods?: string[];
 }
 
-interface UMLRelation {
+export interface UMLRelation {
   id: string;
   from: string; // node id
   to: string; // node id
