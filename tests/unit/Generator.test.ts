@@ -1,9 +1,9 @@
-import { CodeEntity } from "../../lib/Parser";
+import { CodeEntity } from "../../lib/parser/models";
 import { Generator } from "../../lib/Generator";
 import type { UMLGraph } from "../../lib/Generator";
 
 describe("Generator", () => {
-  it("should generate correct UML for simple class hierarchy", () => {
+  it("should generate correct UML for simple class hierarchy and component", () => {
     const entities: CodeEntity[] = [
       {
         kind: "class",
@@ -27,6 +27,14 @@ describe("Generator", () => {
         path: "A.ts",
         args: [],
         returnType: null,
+      },
+      {
+        kind: "component",
+        name: "MyComponent",
+        superClass: "React.Component",
+        methods: ["render"],
+        properties: [],
+        path: "A.ts",
       },
     ];
 
@@ -57,6 +65,14 @@ describe("Generator", () => {
           path: "A.ts",
           args: [],
           returnType: null,
+        },
+        {
+          id: "4",
+          name: "MyComponent",
+          type: "component",
+          attributes: [],
+          methods: ["render"],
+          path: "A.ts",
         },
       ],
       relations: [

@@ -15,7 +15,7 @@ describe("Parser", () => {
 
       makeFile(
         fileB,
-        `export class B extends A {\n  other = "x";\n  compute() { return 2; }\n}\n`,
+        `export class B extends A {\n  other = "x";\n  compute() { return 2; }\n}\nexport class MyComponent extends React.Component { render() { return null; } }\n`,
       );
 
       const parsed = new Parser([fileA, fileB]).getEntities();
@@ -34,9 +34,13 @@ describe("Parser", () => {
             methods: expect.arrayContaining(["compute"]),
             properties: expect.arrayContaining(["other"]),
           }),
+          expect.objectContaining({
+            kind: "component",
+            name: "MyComponent",
+          }),
         ]),
       );
-      expect(parsed).toHaveLength(2);
+      expect(parsed).toHaveLength(3);
     });
   });
 

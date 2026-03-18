@@ -14,6 +14,17 @@ export class UMLNodeFactory {
       };
     }
 
+    if (entity.kind === "component") {
+      return {
+        id,
+        name: entity.name,
+        type: "component",
+        attributes: entity.properties,
+        methods: entity.methods,
+        path: entity.path,
+      };
+    }
+
     return {
       id,
       name: entity.name,

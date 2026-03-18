@@ -15,6 +15,8 @@ export class Parser {
   }
 
   getClasses(): ClassInfo[] {
-    return this.parser.getEntities().filter((e): e is ClassInfo => e.kind === "class");
+    return this.parser
+      .getEntities()
+      .filter((e): e is ClassInfo => e.kind === "class");
   }
 }

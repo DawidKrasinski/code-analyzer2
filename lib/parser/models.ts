@@ -15,9 +15,18 @@ export type ClassInfo = {
   path: string;
 };
 
-export type CodeEntity = ClassInfo | FunctionInfo;
+export type ComponentInfo = {
+  kind: "component";
+  name: string;
+  superClass: string | null;
+  methods: string[];
+  properties: string[];
+  path: string;
+};
 
-export type UMLNodeType = "class" | "interface" | "abstract" | "function";
+export type CodeEntity = ClassInfo | ComponentInfo | FunctionInfo;
+
+export type UMLNodeType = "class" | "interface" | "abstract" | "function" | "component";
 
 export interface UMLNode {
   id: string;

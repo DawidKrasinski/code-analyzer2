@@ -1,12 +1,25 @@
 import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
-import { ClassInfo } from "../models";
+import { ClassInfo, ComponentInfo } from "../models";
+
+function isComponentClass(className: string, superClass: t.Expression | null | undefined) {
+  if (className.endsWith("Component")) return true;
+  if (!superClass) return false;
+  if (t.isMemberExpression(superClass)) {
+    return (
+      t.isIdentifier(superClass.object) && superClass.object.name === "React" &&
+      t.isIdentifier(superClass.property) && superClass.property.name === "Component"
+    );
+  }
+  if (t.isIdentifier(superClass) && superClass.name === "Component") return true;
+  return false;
+}
 
 export class ClassExtractor {
   static extract(
     path: NodePath<t.ClassDeclaration>,
     filePath: string,
-  ): ClassInfo {
+  ): ClassInfo | ComponentInfo {
     const className = path.node.id?.name ?? "Anonymous";
     let superClass: string | null = null;
 
@@ -15,7 +28,7 @@ export class ClassExtractor {
         superClass = path.node.superClass.name;
       } else if (t.isMemberExpression(path.node.superClass)) {
         superClass =
-          path.node.superClass.property.type === "Identifier"
+          t.isIdentifier(path.node.superClass.property)
             ? path.node.superClass.property.name
             : "<complex>";
       } else {
@@ -32,8 +45,7 @@ export class ClassExtractor {
           const name = classElement.key.name;
           const accessibility = (classElement as any).accessibility;
           if (accessibility === "private") methods.push(`private ${name}`);
-          else if (accessibility === "protected")
-            methods.push(`protected ${name}`);
+          else if (accessibility === "protected") methods.push(`protected ${name}`);
           else if (accessibility === "public") methods.push(`public ${name}`);
           else methods.push(name);
         }
@@ -42,14 +54,25 @@ export class ClassExtractor {
           const name = classElement.key.name;
           const accessibility = (classElement as any).accessibility;
           if (accessibility === "private") properties.push(`private ${name}`);
-          else if (accessibility === "protected")
-            properties.push(`protected ${name}`);
-          else if (accessibility === "public")
-            properties.push(`public ${name}`);
+          else if (accessibility === "protected") properties.push(`protected ${name}`);
+          else if (accessibility === "public") properties.push(`public ${name}`);
           else properties.push(name);
         }
       }
     });
+
+    const isComponent = isComponentClass(className, path.node.superClass);
+
+    if (isComponent) {
+      return {
+        kind: "component",
+        name: className,
+        superClass,
+        methods,
+        properties,
+        path: filePath,
+      };
+    }
 
     return {
       kind: "class",
