@@ -13,7 +13,9 @@ describe("FunctionExtractor", () => {
 
     traverse(ast, {
       FunctionDeclaration(path) {
-        const extracted = FunctionExtractor.extract(path, "file.ts");
+        const extracted = FunctionExtractor.extract(path, "file.ts", [
+          "file.ts",
+        ]);
         if (extracted) info = extracted;
       },
     });

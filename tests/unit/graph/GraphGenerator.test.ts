@@ -10,7 +10,7 @@ describe("GraphGenerator", () => {
         superClass: null,
         methods: [],
         properties: [],
-        path: "A.ts",
+        path: ["A.ts"],
       },
       {
         kind: "class",
@@ -18,9 +18,15 @@ describe("GraphGenerator", () => {
         superClass: "A",
         methods: [],
         properties: [],
-        path: "B.ts",
+        path: ["B.ts"],
       },
-      { kind: "function", name: "f", path: "A.ts", args: [], returnType: null },
+      {
+        kind: "function",
+        name: "f",
+        path: ["A.ts"],
+        args: [],
+        returnType: null,
+      },
     ];
 
     const g = new GraphGenerator(entities).generate();

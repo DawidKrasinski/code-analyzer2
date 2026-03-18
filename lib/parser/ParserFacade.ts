@@ -6,11 +6,18 @@ import type * as t from "@babel/types";
 import { ClassExtractor } from "./extractors/ClassExtractor";
 import { FunctionExtractor } from "./extractors/FunctionExtractor";
 import { CodeEntity } from "./models";
+import {
+  getSharedPrefixSegments,
+  splitToCommonRelativePath,
+} from "../utils/entityPath";
 
 export class ParserFacade {
   private entities: CodeEntity[] = [];
+  private sharedPrefixSegments: string[];
 
-  constructor(private paths: string[]) {}
+  constructor(private paths: string[]) {
+    this.sharedPrefixSegments = getSharedPrefixSegments(paths);
+  }
 
   getEntities(): CodeEntity[] {
     this.parseFiles();
@@ -23,6 +30,10 @@ export class ParserFacade {
 
   private parseFile(filePath: string) {
     const code = fs.readFileSync(filePath, "utf8");
+    const pathParts = splitToCommonRelativePath(
+      filePath,
+      this.sharedPrefixSegments,
+    );
 
     let ast;
     try {
@@ -39,11 +50,15 @@ export class ParserFacade {
 
     traverse(ast, {
       ClassDeclaration: (path: NodePath<t.ClassDeclaration>) => {
-        const classInfo = ClassExtractor.extract(path, filePath);
+        const classInfo = ClassExtractor.extract(path, pathParts);
         this.entities.push(classInfo);
       },
       FunctionDeclaration: (path: NodePath<t.FunctionDeclaration>) => {
-        const functionInfo = FunctionExtractor.extract(path, filePath);
+        const functionInfo = FunctionExtractor.extract(
+          path,
+          filePath,
+          pathParts,
+        );
         if (functionInfo) {
           this.entities.push(functionInfo);
         }

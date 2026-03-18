@@ -1,7 +1,7 @@
 export type FunctionInfo = {
   kind: "function";
   name: string;
-  path: string;
+  path: string[];
   args: string[];
   returnType: string | null;
 };
@@ -12,7 +12,7 @@ export type ClassInfo = {
   superClass: string | null;
   methods: string[];
   properties: string[];
-  path: string;
+  path: string[];
 };
 
 export type ComponentInfo = {
@@ -21,12 +21,17 @@ export type ComponentInfo = {
   superClass: string | null;
   methods: string[];
   properties: string[];
-  path: string;
+  path: string[];
 };
 
 export type CodeEntity = ClassInfo | ComponentInfo | FunctionInfo;
 
-export type UMLNodeType = "class" | "interface" | "abstract" | "function" | "component";
+export type UMLNodeType =
+  | "class"
+  | "interface"
+  | "abstract"
+  | "function"
+  | "component";
 
 export interface UMLNode {
   id: string;
@@ -36,7 +41,7 @@ export interface UMLNode {
   methods?: string[];
   args?: string[];
   returnType?: string | null;
-  path: string;
+  path: string[];
 }
 
 export type RelationType =

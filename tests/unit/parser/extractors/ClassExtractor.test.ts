@@ -2,7 +2,6 @@ import path from "path";
 import * as parser from "@babel/parser";
 import * as traverse from "@babel/traverse";
 import { ClassExtractor } from "../../../../lib/parser/extractors/ClassExtractor";
-import { withTempDir, makeFile } from "../../../utils/testUtils";
 
 describe("ClassExtractor", () => {
   it("extracts class data", () => {
@@ -15,7 +14,7 @@ describe("ClassExtractor", () => {
 
     traverse.default(ast, {
       ClassDeclaration(path) {
-        classInfo = ClassExtractor.extract(path, "A.ts");
+        classInfo = ClassExtractor.extract(path, ["A.ts"]);
       },
     });
 

@@ -11,7 +11,7 @@ describe("Generator", () => {
         superClass: null,
         methods: ["method1"],
         properties: ["prop1"],
-        path: "A.ts",
+        path: ["A.ts"],
       },
       {
         kind: "class",
@@ -19,12 +19,12 @@ describe("Generator", () => {
         superClass: "A",
         methods: ["method2"],
         properties: ["prop2"],
-        path: "B.ts",
+        path: ["B.ts"],
       },
       {
         kind: "function",
         name: "doWork",
-        path: "A.ts",
+        path: ["A.ts"],
         args: [],
         returnType: null,
       },
@@ -34,7 +34,7 @@ describe("Generator", () => {
         superClass: "React.Component",
         methods: ["render"],
         properties: [],
-        path: "A.ts",
+        path: ["A.ts"],
       },
     ];
 
@@ -48,7 +48,7 @@ describe("Generator", () => {
           type: "class",
           attributes: ["prop1"],
           methods: ["method1"],
-          path: "A.ts",
+          path: ["A.ts"],
         },
         {
           id: "2",
@@ -56,13 +56,13 @@ describe("Generator", () => {
           type: "class",
           attributes: ["prop2"],
           methods: ["method2"],
-          path: "B.ts",
+          path: ["B.ts"],
         },
         {
           id: "3",
           name: "doWork",
           type: "function",
-          path: "A.ts",
+          path: ["A.ts"],
           args: [],
           returnType: null,
         },
@@ -72,7 +72,7 @@ describe("Generator", () => {
           type: "component",
           attributes: [],
           methods: ["render"],
-          path: "A.ts",
+          path: ["A.ts"],
         },
       ],
       relations: [

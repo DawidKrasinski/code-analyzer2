@@ -9,12 +9,12 @@ describe("UMLNodeFactory", () => {
       superClass: null,
       methods: ["m"],
       properties: ["p"],
-      path: "A.ts",
+      path: ["A.ts"],
     };
     const fnEntity: CodeEntity = {
       kind: "function",
       name: "doIt",
-      path: "A.ts",
+      path: ["A.ts"],
       args: ["x: number"],
       returnType: "void",
     };
