@@ -1,25 +1,36 @@
-import { ClassInfo } from "../../lib/Parser";
+import { CodeEntity } from "../../lib/Parser";
 import { Generator } from "../../lib/Generator";
 import type { UMLGraph } from "../../lib/Generator";
 
 describe("Generator", () => {
   it("should generate correct UML for simple class hierarchy", () => {
-    const classes: ClassInfo[] = [
+    const entities: CodeEntity[] = [
       {
+        kind: "class",
         name: "A",
         superClass: null,
         methods: ["method1"],
         properties: ["prop1"],
+        path: "A.ts",
       },
       {
+        kind: "class",
         name: "B",
         superClass: "A",
         methods: ["method2"],
         properties: ["prop2"],
+        path: "B.ts",
+      },
+      {
+        kind: "function",
+        name: "doWork",
+        path: "A.ts",
+        args: [],
+        returnType: null,
       },
     ];
 
-    const generator = new Generator(classes);
+    const generator = new Generator(entities);
     const graph: UMLGraph = generator.generate();
     expect(graph).toEqual({
       nodes: [
@@ -29,6 +40,7 @@ describe("Generator", () => {
           type: "class",
           attributes: ["prop1"],
           methods: ["method1"],
+          path: "A.ts",
         },
         {
           id: "2",
@@ -36,6 +48,15 @@ describe("Generator", () => {
           type: "class",
           attributes: ["prop2"],
           methods: ["method2"],
+          path: "B.ts",
+        },
+        {
+          id: "3",
+          name: "doWork",
+          type: "function",
+          path: "A.ts",
+          args: [],
+          returnType: null,
         },
       ],
       relations: [

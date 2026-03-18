@@ -1,17 +1,9 @@
-import { Analyzer } from "./lib/Analyzer";
-import { Generator } from "./lib/Generator";
-import { Parser } from "./lib/Parser";
+import { CodeAnalyzerService } from "./lib/pipeline/CodeAnalyzerService";
 
 export function main(path: string = process.cwd()) {
   try {
-    const analyzer = new Analyzer(path);
-    const paths = analyzer.getPaths();
-    const parser = new Parser(paths);
-    const classes = parser.getClasses();
-    const generator = new Generator(classes);
-    const graph = generator.generate();
-
-    return graph;
+    const service = new CodeAnalyzerService(path);
+    return service.analyze();
   } catch (err) {
     console.error("Błąd podczas analizy:", err);
     throw err;

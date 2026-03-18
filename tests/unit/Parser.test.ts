@@ -10,7 +10,7 @@ describe("Parser", () => {
 
       makeFile(
         fileA,
-        `export class A {\n  value = 1;\n  method() { return this.value; }\n}\n`,
+        `export class A {\n  value = 1;\n  private hidden = 2;\n  private method() { return this.value; }\n}\n`,
       );
 
       makeFile(
@@ -18,15 +18,15 @@ describe("Parser", () => {
         `export class B extends A {\n  other = "x";\n  compute() { return 2; }\n}\n`,
       );
 
-      const parsed = new Parser([fileA, fileB]).getClasses();
+      const parsed = new Parser([fileA, fileB]).getEntities();
 
       expect(parsed).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             name: "A",
             superClass: null,
-            methods: expect.arrayContaining(["method"]),
-            properties: expect.arrayContaining(["value"]),
+            methods: expect.arrayContaining(["private method"]),
+            properties: expect.arrayContaining(["value", "private hidden"]),
           }),
           expect.objectContaining({
             name: "B",
@@ -40,6 +40,35 @@ describe("Parser", () => {
     });
   });
 
+  it("should parse top-level functions across the project", () => {
+    withTempDir((tmpDir) => {
+      const file = path.join(tmpDir, "F.ts");
+      makeFile(
+        file,
+        `export function compute() { return 5; }\nfunction localHelper() { return 1; }\n`,
+      );
+
+      const parsed = new Parser([file]).getEntities();
+      expect(parsed).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            kind: "function",
+            name: "compute",
+            args: [],
+            returnType: null,
+          }),
+          expect.objectContaining({
+            kind: "function",
+            name: "localHelper",
+            args: [],
+            returnType: null,
+          }),
+        ]),
+      );
+      expect(parsed.filter((e) => e.kind === "function")).toHaveLength(2);
+    });
+  });
+
   it("should include classes from files with no exports and parse anonymous classes if present", () => {
     withTempDir((tmpDir) => {
       const file = path.join(tmpDir, "C.ts");
@@ -48,7 +77,7 @@ describe("Parser", () => {
         `class Local {\n  p = 1;\n}\n\nexport default class extends Local {\n  x = 2;\n}\n`,
       );
 
-      const parsed = new Parser([file]).getClasses();
+      const parsed = new Parser([file]).getEntities();
 
       expect(parsed).toEqual(
         expect.arrayContaining([
