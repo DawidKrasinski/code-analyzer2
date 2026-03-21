@@ -30,14 +30,23 @@ function collectUsedEntities(node: t.Node | null | undefined): string[] {
   const localDeclarations = new Set<string>();
 
   // First pass: collect locally declared names (function/class declarations)
-  const collectLocalDeclarations = (currentNode: t.Node | null | undefined, isRoot = false) => {
+  const collectLocalDeclarations = (
+    currentNode: t.Node | null | undefined,
+    isRoot = false,
+  ) => {
     if (!currentNode) return;
     if (!isRoot && isNestedScope(currentNode)) return;
 
     // Collect function/class declarations
-    if (t.isFunctionDeclaration(currentNode) && t.isIdentifier(currentNode.id)) {
+    if (
+      t.isFunctionDeclaration(currentNode) &&
+      t.isIdentifier(currentNode.id)
+    ) {
       localDeclarations.add(currentNode.id.name);
-    } else if (t.isClassDeclaration(currentNode) && t.isIdentifier(currentNode.id)) {
+    } else if (
+      t.isClassDeclaration(currentNode) &&
+      t.isIdentifier(currentNode.id)
+    ) {
       localDeclarations.add(currentNode.id.name);
     }
 
@@ -60,7 +69,10 @@ function collectUsedEntities(node: t.Node | null | undefined): string[] {
     if (!isRoot && isNestedScope(currentNode)) return;
 
     // Collect function calls: funcName()
-    if (t.isCallExpression(currentNode) || t.isOptionalCallExpression(currentNode)) {
+    if (
+      t.isCallExpression(currentNode) ||
+      t.isOptionalCallExpression(currentNode)
+    ) {
       const callee = currentNode.callee;
       if (t.isIdentifier(callee)) {
         if (!localDeclarations.has(callee.name)) {
