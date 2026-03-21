@@ -81,7 +81,10 @@ export class ParserFacade {
     return path.parentPath?.isExportNamedDeclaration() ?? false;
   }
 
-  private static getApiHandlerEntityName(method: string, apiRoute: string): string {
+  private static getApiHandlerEntityName(
+    method: string,
+    apiRoute: string,
+  ): string {
     if (method === "GET") {
       return "GET";
     }
@@ -133,8 +136,7 @@ export class ParserFacade {
               kind: "function",
               name: ParserFacade.getApiHandlerEntityName(method, apiRoute),
               path: pathParts,
-              args:
-                functionInfo?.kind === "function" ? functionInfo.args : [],
+              args: functionInfo?.kind === "function" ? functionInfo.args : [],
               returnType:
                 functionInfo?.kind === "function"
                   ? functionInfo.returnType

@@ -50,8 +50,11 @@ function getFetchMethod(args: t.CallExpression["arguments"]): string {
     if (!t.isObjectProperty(property)) continue;
 
     const key = property.key;
-    const keyName =
-      t.isIdentifier(key) ? key.name : t.isStringLiteral(key) ? key.value : null;
+    const keyName = t.isIdentifier(key)
+      ? key.name
+      : t.isStringLiteral(key)
+        ? key.value
+        : null;
 
     if (keyName !== "method") continue;
 

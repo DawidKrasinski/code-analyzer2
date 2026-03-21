@@ -74,7 +74,7 @@ function demo() {
 
     expect(used).toEqual(expect.arrayContaining(["outside", "inner"]));
   });
-  
+
   it("extracts API endpoints from fetch calls", () => {
     const code = `
 function demo() {

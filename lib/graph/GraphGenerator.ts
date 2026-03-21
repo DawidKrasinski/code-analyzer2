@@ -92,9 +92,8 @@ export class GraphGenerator {
       }
 
       for (const endpointName of entity.usedApiEndpoints ?? []) {
-        const normalizedEndpointName = GraphGenerator.normalizeApiEndpointName(
-          endpointName,
-        );
+        const normalizedEndpointName =
+          GraphGenerator.normalizeApiEndpointName(endpointName);
 
         if (!apiEndpointNames.has(normalizedEndpointName)) {
           continue;

@@ -145,7 +145,9 @@ export class ClassExtractor {
           usedFunctions.add(entityName);
         }
 
-        for (const endpointName of collectUsedApiEndpoints(classElement.value)) {
+        for (const endpointName of collectUsedApiEndpoints(
+          classElement.value,
+        )) {
           usedApiEndpoints.add(endpointName);
         }
 
