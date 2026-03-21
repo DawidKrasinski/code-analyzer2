@@ -1,123 +1,72 @@
 import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 import { ClassInfo, ComponentInfo } from "../models";
+import { collectUsedApiEndpoints } from "./collectUsedApiEndpoints";
+import { collectUsedEntities } from "./collectUsedEntities";
 
-function isNestedScope(node: t.Node): boolean {
-  return (
-    t.isFunctionDeclaration(node) ||
-    t.isFunctionExpression(node) ||
-    t.isArrowFunctionExpression(node) ||
-    t.isClassDeclaration(node) ||
-    t.isClassExpression(node)
-  );
-}
-
-function isNodeLike(value: unknown): value is t.Node {
-  return (
-    !!value &&
-    typeof value === "object" &&
-    "type" in value &&
-    typeof (value as { type?: unknown }).type === "string"
-  );
-}
-
-function collectUsedEntities(node: t.Node | null | undefined): string[] {
-  if (!node) {
-    return [];
+function collectParamNamesFromPattern(
+  pattern: t.Node | null | undefined,
+  names: Set<string>,
+): void {
+  if (!pattern) {
+    return;
   }
 
-  const usedEntities = new Set<string>();
-  const localDeclarations = new Set<string>();
+  if (t.isIdentifier(pattern)) {
+    names.add(pattern.name);
+    return;
+  }
 
-  // First pass: collect locally declared names (function/class declarations)
-  const collectLocalDeclarations = (
-    currentNode: t.Node | null | undefined,
-    isRoot = false,
-  ) => {
-    if (!currentNode) return;
-    if (!isRoot && isNestedScope(currentNode)) return;
-
-    // Collect function/class declarations
-    if (
-      t.isFunctionDeclaration(currentNode) &&
-      t.isIdentifier(currentNode.id)
-    ) {
-      localDeclarations.add(currentNode.id.name);
-    } else if (
-      t.isClassDeclaration(currentNode) &&
-      t.isIdentifier(currentNode.id)
-    ) {
-      localDeclarations.add(currentNode.id.name);
+  if (t.isAssignmentPattern(pattern)) {
+    if (t.isLVal(pattern.left)) {
+      collectParamNamesFromPattern(pattern.left, names);
     }
+    return;
+  }
 
-    const visitorKeys = t.VISITOR_KEYS[currentNode.type] ?? [];
-    for (const key of visitorKeys) {
-      const value = currentNode[key as keyof t.Node];
-      if (Array.isArray(value)) {
-        for (const child of value) {
-          if (isNodeLike(child)) collectLocalDeclarations(child, false);
-        }
-      } else if (isNodeLike(value)) {
-        collectLocalDeclarations(value, false);
+  if (t.isRestElement(pattern)) {
+    if (t.isIdentifier(pattern.argument)) {
+      names.add(pattern.argument.name);
+    } else if (t.isArrayPattern(pattern.argument)) {
+      for (const element of pattern.argument.elements) {
+        if (!element) continue;
+        collectParamNamesFromPattern(element, names);
       }
-    }
-  };
-
-  // Second pass: collect used entities
-  const visit = (currentNode: t.Node | null | undefined, isRoot = false) => {
-    if (!currentNode) return;
-    if (!isRoot && isNestedScope(currentNode)) return;
-
-    // Collect function calls: funcName()
-    if (
-      t.isCallExpression(currentNode) ||
-      t.isOptionalCallExpression(currentNode)
-    ) {
-      const callee = currentNode.callee;
-      if (t.isIdentifier(callee)) {
-        if (!localDeclarations.has(callee.name)) {
-          usedEntities.add(callee.name);
+    } else if (t.isObjectPattern(pattern.argument)) {
+      for (const property of pattern.argument.properties) {
+        if (t.isRestElement(property)) {
+          collectParamNamesFromPattern(property, names);
+        } else if (
+          t.isObjectProperty(property) &&
+          t.isPatternLike(property.value)
+        ) {
+          collectParamNamesFromPattern(property.value, names);
         }
       }
     }
+    return;
+  }
 
-    // Collect JSX element usage: <ComponentName />
-    if (t.isJSXElement(currentNode)) {
-      const openingElement = currentNode.openingElement;
-      if (t.isJSXIdentifier(openingElement.name)) {
-        const name = openingElement.name.name;
-        if (!localDeclarations.has(name)) {
-          usedEntities.add(name);
-        }
+  if (t.isArrayPattern(pattern)) {
+    for (const element of pattern.elements) {
+      if (!element) continue;
+      collectParamNamesFromPattern(element, names);
+    }
+    return;
+  }
+
+  if (t.isObjectPattern(pattern)) {
+    for (const property of pattern.properties) {
+      if (t.isRestElement(property)) {
+        collectParamNamesFromPattern(property, names);
+      } else if (
+        t.isObjectProperty(property) &&
+        t.isPatternLike(property.value)
+      ) {
+        collectParamNamesFromPattern(property.value, names);
       }
     }
-
-    // Collect class instantiation: new ClassName()
-    if (t.isNewExpression(currentNode)) {
-      const callee = currentNode.callee;
-      if (t.isIdentifier(callee)) {
-        if (!localDeclarations.has(callee.name)) {
-          usedEntities.add(callee.name);
-        }
-      }
-    }
-
-    const visitorKeys = t.VISITOR_KEYS[currentNode.type] ?? [];
-    for (const key of visitorKeys) {
-      const value = currentNode[key as keyof t.Node];
-      if (Array.isArray(value)) {
-        for (const child of value) {
-          if (isNodeLike(child)) visit(child);
-        }
-      } else if (isNodeLike(value)) {
-        visit(value);
-      }
-    }
-  };
-
-  collectLocalDeclarations(node);
-  visit(node, true);
-  return [...usedEntities];
+  }
 }
 
 function isComponentClass(
@@ -162,11 +111,24 @@ export class ClassExtractor {
     const methods: string[] = [];
     const properties: string[] = [];
     const usedFunctions = new Set<string>();
+    const usedApiEndpoints = new Set<string>();
 
     path.node.body.body.forEach((classElement) => {
       if (t.isClassMethod(classElement)) {
-        for (const entityName of collectUsedEntities(classElement.body)) {
+        const methodParamNames = new Set<string>();
+        for (const param of classElement.params) {
+          collectParamNamesFromPattern(param, methodParamNames);
+        }
+
+        for (const entityName of collectUsedEntities(classElement.body, {
+          skipNestedScopes: false,
+          localDeclarations: [...methodParamNames],
+        })) {
           usedFunctions.add(entityName);
+        }
+
+        for (const endpointName of collectUsedApiEndpoints(classElement.body)) {
+          usedApiEndpoints.add(endpointName);
         }
 
         if (t.isIdentifier(classElement.key)) {
@@ -181,6 +143,10 @@ export class ClassExtractor {
       } else if (t.isClassProperty(classElement)) {
         for (const entityName of collectUsedEntities(classElement.value)) {
           usedFunctions.add(entityName);
+        }
+
+        for (const endpointName of collectUsedApiEndpoints(classElement.value)) {
+          usedApiEndpoints.add(endpointName);
         }
 
         if (t.isIdentifier(classElement.key)) {
@@ -207,6 +173,7 @@ export class ClassExtractor {
         properties,
         path: pathParts,
         usedFunctions: [...usedFunctions],
+        usedApiEndpoints: [...usedApiEndpoints],
       };
     }
 
@@ -218,6 +185,7 @@ export class ClassExtractor {
       properties,
       path: pathParts,
       usedFunctions: [...usedFunctions],
+      usedApiEndpoints: [...usedApiEndpoints],
     };
   }
 }

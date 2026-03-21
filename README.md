@@ -6,18 +6,19 @@ A lightweight TypeScript/JavaScript code analyzer that traverses a project tree,
 
 `code-analyzer3` provides a modular analysis pipeline:
 
-1. **Analyzer**: Recursively collects supported source files from a path (`.ts`, `.js`, `.tsx`, `.jsx`, `.mjs`, `.cjs`) while excluding `node_modules`, `.git`, `dist`, and `.next`.
-2. **Parser**: Parses each file into an AST with Babel and extracts class declarations, methods, properties, inheritance, and standalone functions.
-3. **Generator**: Converts parsed class metadata into a UML-like graph with nodes and inheritance edges.
+1. **FileCollector**: Recursively collects supported source files from a path (`.ts`, `.js`, `.tsx`, `.jsx`, `.mjs`, `.cjs`) while excluding `node_modules`, `.git`, `dist`, and `.next`.
+2. **ParserFacade**: Parses each file into an AST with Babel and extracts class declarations, methods, properties, inheritance, standalone functions, and global variables.
+3. **GraphGenerator**: Converts parsed metadata into a UML-like graph with nodes and relations.
 4. **Main runner**: Runs all stages and prints a JSON graph result.
 
 ## 🧱 Project structure
 
 - `index.ts` — entry point and orchestration (`main()` function)
-- `lib/Analyzer.ts` — collects file paths from the filesystem
-- `lib/Parser.ts` — Babel parser/traversal to extract class/function metadata
-- `lib/Generator.ts` — generates UML graph nodes/relations
-- `tests/` — unit tests for Analyzer, Parser, Generator
+- `lib/files/FileCollector.ts` — collects file paths from the filesystem
+- `lib/parser/ParserFacade.ts` — Babel parser/traversal to extract entities
+- `lib/graph/GraphGenerator.ts` — generates UML graph nodes/relations
+- `lib/pipeline/CodeAnalyzerService.ts` — composes collector + parser + graph generator
+- `tests/` — unit tests for parser/graph/pipeline/utils
 - `template/` — Next.js frontend (for visualization or integration use)
 
 ## ✅ Features
@@ -87,9 +88,9 @@ npm test
 
 ## 🔧 Extending the analyzer
 
-- Add new file extensions in `lib/Analyzer.ts`
-- Add more AST analysis logic in `lib/Parser.ts` (interfaces, decorators, composition relations, etc.)
-- Expand diagram generation in `lib/Generator.ts` to include associations and dependencies
+- Add new file extensions in `lib/files/FileCollector.ts`
+- Add more AST analysis logic in `lib/parser/ParserFacade.ts` and `lib/parser/extractors/*`
+- Expand diagram generation in `lib/graph/GraphGenerator.ts` to include additional relation types
 
 ## 📌 Notes
 

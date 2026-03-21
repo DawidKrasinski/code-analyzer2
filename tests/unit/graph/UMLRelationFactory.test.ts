@@ -10,4 +10,9 @@ describe("UMLRelationFactory", () => {
     const rel = UMLRelationFactory.createDependency("2", "3", "4");
     expect(rel).toEqual({ id: "2", from: "3", to: "4", type: "dependency" });
   });
+
+  it("creates api-usage relation", () => {
+    const rel = UMLRelationFactory.createApiUsage("3", "4", "5");
+    expect(rel).toEqual({ id: "3", from: "4", to: "5", type: "api-usage" });
+  });
 });

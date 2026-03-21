@@ -29,6 +29,15 @@ export class UMLRelationFactory {
     };
   }
 
+  static createApiUsage(id: string, from: string, to: string): UMLRelation {
+    return {
+      id,
+      from,
+      to,
+      type: "api-usage",
+    };
+  }
+
   static createFromClass(
     superClass: ClassInfo,
     classId: string,

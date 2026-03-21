@@ -18,12 +18,21 @@ describe("UMLNodeFactory", () => {
       args: ["x: number"],
       returnType: "void",
     };
+    const variableEntity: CodeEntity = {
+      kind: "variable",
+      name: "globalConfig",
+      path: ["A.ts"],
+      usedFunctions: ["doIt"],
+    };
 
     expect(UMLNodeFactory.create(classEntity, "1")).toEqual(
       expect.objectContaining({ type: "class" }),
     );
     expect(UMLNodeFactory.create(fnEntity, "2")).toEqual(
       expect.objectContaining({ type: "function" }),
+    );
+    expect(UMLNodeFactory.create(variableEntity, "3")).toEqual(
+      expect.objectContaining({ type: "variable" }),
     );
   });
 });

@@ -1,6 +1,6 @@
 import { CodeAnalyzerService } from "./lib/pipeline/CodeAnalyzerService";
 
-export function main(path: string = process.cwd()) {
+export function start(path: string = process.cwd()) {
   try {
     const service = new CodeAnalyzerService(path);
     return service.analyze();
@@ -11,6 +11,6 @@ export function main(path: string = process.cwd()) {
 }
 
 if (process.argv[1] && process.argv[1].endsWith("index.js")) {
-  const graph = main();
+  const graph = start();
   console.log(JSON.stringify(graph, null, 2));
 }

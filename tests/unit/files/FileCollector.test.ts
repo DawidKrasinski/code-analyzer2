@@ -24,4 +24,49 @@ describe("FileCollector", () => {
       );
     });
   });
+
+  it("throws when path does not exist", () => {
+    const missingPath = path.join(
+      process.cwd(),
+      `collector-test-missing-${Date.now()}`,
+    );
+
+    expect(() => new FileCollector(missingPath).getPaths()).toThrow();
+  });
+
+  it("does not include files with unsupported extensions", () => {
+    withTempDir((tmpDir: string) => {
+      const validFile = path.join(tmpDir, "valid.ts");
+      const invalidFile = path.join(tmpDir, "invalid.txt");
+
+      makeFile(validFile);
+      makeFile(invalidFile, "hello world\n");
+
+      const collected = new FileCollector(tmpDir).getPaths();
+
+      expect(collected).toContain(validFile);
+      expect(collected).not.toContain(invalidFile);
+    });
+  });
+
+  it("does not include files inside .git, dist and .next", () => {
+    withTempDir((tmpDir: string) => {
+      const included = path.join(tmpDir, "src", "ok.ts");
+      const gitFile = path.join(tmpDir, ".git", "hooks", "x.ts");
+      const distFile = path.join(tmpDir, "dist", "compiled.js");
+      const nextFile = path.join(tmpDir, ".next", "server", "page.js");
+
+      makeFile(included);
+      makeFile(gitFile);
+      makeFile(distFile);
+      makeFile(nextFile);
+
+      const collected = new FileCollector(tmpDir).getPaths();
+
+      expect(collected).toContain(included);
+      expect(collected).not.toContain(gitFile);
+      expect(collected).not.toContain(distFile);
+      expect(collected).not.toContain(nextFile);
+    });
+  });
 });

@@ -3,143 +3,72 @@ import * as t from "@babel/types";
 import { ParamStringifier } from "../ParamStringifier";
 import { TypeAnnotationSerializer } from "../TypeAnnotationSerializer";
 import { ComponentInfo, FunctionInfo } from "../models";
+import { collectUsedApiEndpoints } from "./collectUsedApiEndpoints";
+import { collectUsedEntities } from "./collectUsedEntities";
 
-function isNestedScope(node: t.Node): boolean {
-  return (
-    t.isFunctionDeclaration(node) ||
-    t.isFunctionExpression(node) ||
-    t.isArrowFunctionExpression(node) ||
-    t.isClassDeclaration(node) ||
-    t.isClassExpression(node)
-  );
-}
-
-function isNodeLike(value: unknown): value is t.Node {
-  return (
-    !!value &&
-    typeof value === "object" &&
-    "type" in value &&
-    typeof (value as { type?: unknown }).type === "string"
-  );
-}
-
-function collectUsedEntities(node: t.Node | null | undefined): string[] {
-  if (!node) {
-    return [];
+function collectParamNamesFromPattern(
+  pattern: t.Node | null | undefined,
+  names: Set<string>,
+): void {
+  if (!pattern) {
+    return;
   }
 
-  const usedEntities = new Set<string>();
-  const localDeclarations = new Set<string>();
+  if (t.isIdentifier(pattern)) {
+    names.add(pattern.name);
+    return;
+  }
 
-  // First pass: collect locally declared names (parameters, variable/function/class declarations)
-  const collectLocalDeclarations = (
-    currentNode: t.Node | null | undefined,
-    isRoot = false,
-  ) => {
-    if (!currentNode) return;
-    if (!isRoot && isNestedScope(currentNode)) return;
+  if (t.isAssignmentPattern(pattern)) {
+    if (t.isLVal(pattern.left)) {
+      collectParamNamesFromPattern(pattern.left, names);
+    }
+    return;
+  }
 
-    // Collect function parameters
-    if (
-      t.isFunctionDeclaration(currentNode) ||
-      t.isFunctionExpression(currentNode) ||
-      t.isArrowFunctionExpression(currentNode)
-    ) {
-      if ((currentNode as any).params) {
-        for (const param of (currentNode as any).params) {
-          if (t.isIdentifier(param)) {
-            localDeclarations.add(param.name);
-          }
+  if (t.isRestElement(pattern)) {
+    if (t.isIdentifier(pattern.argument)) {
+      names.add(pattern.argument.name);
+    } else if (t.isArrayPattern(pattern.argument)) {
+      for (const element of pattern.argument.elements) {
+        if (!element) continue;
+        collectParamNamesFromPattern(element, names);
+      }
+    } else if (t.isObjectPattern(pattern.argument)) {
+      for (const property of pattern.argument.properties) {
+        if (t.isRestElement(property)) {
+          collectParamNamesFromPattern(property, names);
+        } else if (
+          t.isObjectProperty(property) &&
+          t.isPatternLike(property.value)
+        ) {
+          collectParamNamesFromPattern(property.value, names);
         }
       }
     }
+    return;
+  }
 
-    // Collect function/class/variable declarations
-    if (
-      t.isFunctionDeclaration(currentNode) &&
-      t.isIdentifier(currentNode.id)
-    ) {
-      localDeclarations.add(currentNode.id.name);
-    } else if (
-      t.isClassDeclaration(currentNode) &&
-      t.isIdentifier(currentNode.id)
-    ) {
-      localDeclarations.add(currentNode.id.name);
-    } else if (
-      t.isVariableDeclarator(currentNode) &&
-      t.isIdentifier(currentNode.id)
-    ) {
-      localDeclarations.add(currentNode.id.name);
+  if (t.isArrayPattern(pattern)) {
+    for (const element of pattern.elements) {
+      if (!element) continue;
+      collectParamNamesFromPattern(element, names);
     }
+    return;
+  }
 
-    const visitorKeys = t.VISITOR_KEYS[currentNode.type] ?? [];
-    for (const key of visitorKeys) {
-      const value = currentNode[key as keyof t.Node];
-      if (Array.isArray(value)) {
-        for (const child of value) {
-          if (isNodeLike(child)) collectLocalDeclarations(child, false);
-        }
-      } else if (isNodeLike(value)) {
-        collectLocalDeclarations(value, false);
+  if (t.isObjectPattern(pattern)) {
+    for (const property of pattern.properties) {
+      if (t.isRestElement(property)) {
+        collectParamNamesFromPattern(property, names);
+      } else if (
+        t.isObjectProperty(property) &&
+        t.isPatternLike(property.value)
+      ) {
+        collectParamNamesFromPattern(property.value, names);
       }
     }
-  };
-
-  // Second pass: collect used entities
-  const visit = (currentNode: t.Node | null | undefined, isRoot = false) => {
-    if (!currentNode) return;
-    if (!isRoot && isNestedScope(currentNode)) return;
-
-    // Collect function calls: funcName()
-    if (
-      t.isCallExpression(currentNode) ||
-      t.isOptionalCallExpression(currentNode)
-    ) {
-      const callee = currentNode.callee;
-      if (t.isIdentifier(callee)) {
-        if (!localDeclarations.has(callee.name)) {
-          usedEntities.add(callee.name);
-        }
-      }
-    }
-
-    // Collect JSX element usage: <ComponentName />
-    if (t.isJSXElement(currentNode)) {
-      const openingElement = currentNode.openingElement;
-      if (t.isJSXIdentifier(openingElement.name)) {
-        const name = openingElement.name.name;
-        if (!localDeclarations.has(name)) {
-          usedEntities.add(name);
-        }
-      }
-    }
-
-    // Collect class instantiation: new ClassName()
-    if (t.isNewExpression(currentNode)) {
-      const callee = currentNode.callee;
-      if (t.isIdentifier(callee)) {
-        if (!localDeclarations.has(callee.name)) {
-          usedEntities.add(callee.name);
-        }
-      }
-    }
-
-    const visitorKeys = t.VISITOR_KEYS[currentNode.type] ?? [];
-    for (const key of visitorKeys) {
-      const value = currentNode[key as keyof t.Node];
-      if (Array.isArray(value)) {
-        for (const child of value) {
-          if (isNodeLike(child)) visit(child);
-        }
-      } else if (isNodeLike(value)) {
-        visit(value);
-      }
-    }
-  };
-
-  collectLocalDeclarations(node, true);
-  visit(node, true);
-  return [...usedEntities];
+  }
 }
 
 function functionReturnsJSX(path: NodePath<t.FunctionDeclaration>): boolean {
@@ -176,11 +105,22 @@ export class FunctionExtractor {
             path.node.returnType.typeAnnotation,
           )
         : null;
-    const usedFunctions = collectUsedEntities(path.node.body);
 
     const isJSXFile = /\.(jsx|tsx)$/i.test(sourceFilePath);
     const isComponentName = /^[A-Z]/.test(functionName);
     const hasJSXReturn = functionReturnsJSX(path);
+    const shouldIncludeNestedScopes =
+      isJSXFile && isComponentName && hasJSXReturn;
+
+    const paramNames = new Set<string>();
+    for (const param of path.node.params) {
+      collectParamNamesFromPattern(param, paramNames);
+    }
+    const usedFunctions = collectUsedEntities(path.node.body, {
+      skipNestedScopes: !shouldIncludeNestedScopes,
+      localDeclarations: [...paramNames],
+    });
+    const usedApiEndpoints = collectUsedApiEndpoints(path.node.body);
 
     if (isJSXFile && isComponentName && hasJSXReturn) {
       return {
@@ -191,6 +131,7 @@ export class FunctionExtractor {
         properties: [],
         path: pathParts,
         usedFunctions,
+        usedApiEndpoints,
       };
     }
 
@@ -201,6 +142,7 @@ export class FunctionExtractor {
       args,
       returnType,
       usedFunctions,
+      usedApiEndpoints,
     };
   }
 }

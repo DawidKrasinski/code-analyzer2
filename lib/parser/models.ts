@@ -5,6 +5,15 @@ export type FunctionInfo = {
   args: string[];
   returnType: string | null;
   usedFunctions?: string[];
+  usedApiEndpoints?: string[];
+};
+
+export type GlobalVariableInfo = {
+  kind: "variable";
+  name: string;
+  path: string[];
+  usedFunctions?: string[];
+  usedApiEndpoints?: string[];
 };
 
 export type ClassInfo = {
@@ -15,6 +24,7 @@ export type ClassInfo = {
   properties: string[];
   path: string[];
   usedFunctions?: string[];
+  usedApiEndpoints?: string[];
 };
 
 export type ComponentInfo = {
@@ -25,16 +35,22 @@ export type ComponentInfo = {
   properties: string[];
   path: string[];
   usedFunctions?: string[];
+  usedApiEndpoints?: string[];
 };
 
-export type CodeEntity = ClassInfo | ComponentInfo | FunctionInfo;
+export type CodeEntity =
+  | ClassInfo
+  | ComponentInfo
+  | FunctionInfo
+  | GlobalVariableInfo;
 
 export type UMLNodeType =
   | "class"
   | "interface"
   | "abstract"
   | "function"
-  | "component";
+  | "component"
+  | "variable";
 
 export interface UMLNode {
   id: string;
@@ -54,7 +70,8 @@ export type RelationType =
   | "aggregation"
   | "composition"
   | "dependency"
-  | "usage";
+  | "usage"
+  | "api-usage";
 
 export interface UMLRelation {
   id: string;

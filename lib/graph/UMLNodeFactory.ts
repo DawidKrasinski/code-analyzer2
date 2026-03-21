@@ -25,6 +25,15 @@ export class UMLNodeFactory {
       };
     }
 
+    if (entity.kind === "variable") {
+      return {
+        id,
+        name: entity.name,
+        type: "variable",
+        path: entity.path,
+      };
+    }
+
     return {
       id,
       name: entity.name,
