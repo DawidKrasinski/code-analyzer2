@@ -3,8 +3,8 @@ import traverse from "@babel/traverse";
 import { FunctionExtractor } from "../../../../lib/parser/extractors/FunctionExtractor";
 
 describe("FunctionExtractor", () => {
-  it("extracts function count and args", () => {
-    const code = `function foo(x: number, ...rest: string[]) { return x; }`;
+  it("extracts function args and used functions", () => {
+    const code = `function foo(x: number, ...rest: string[]) { helper(); const nested = () => internal(); return x; }`;
     const ast = parser.parse(code, {
       sourceType: "module",
       plugins: ["typescript"],
@@ -25,6 +25,7 @@ describe("FunctionExtractor", () => {
       name: "foo",
       args: expect.arrayContaining(["x: number"]),
       returnType: null,
+      usedFunctions: ["helper"],
     });
   });
 });

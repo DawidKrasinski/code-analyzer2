@@ -8,27 +8,64 @@ export class GraphGenerator {
   generate(): UMLGraph {
     const nodes = [];
     const relations = [];
-    const classToId = new Map<string, string>();
+    const entityToId = new Map<string, string>();
+    const functionToId = new Map<string, string>();
     let idCounter = 1;
 
     for (const entity of this.entities) {
       const id = (idCounter++).toString();
-      classToId.set(entity.name, id);
+      entityToId.set(entity.name, id);
+      if (entity.kind === "function") {
+        functionToId.set(entity.name, id);
+      }
       nodes.push(UMLNodeFactory.create(entity, id));
     }
 
     let relCounter = 1;
+    const relationKeys = new Set<string>();
+
     for (const entity of this.entities) {
       if (entity.kind === "class" && entity.superClass) {
-        const fromId = classToId.get(entity.name);
-        const toId = classToId.get(entity.superClass);
+        const fromId = entityToId.get(entity.name);
+        const toId = entityToId.get(entity.superClass);
         if (fromId && toId) {
-          relations.push({
-            id: (relCounter++).toString(),
-            from: fromId,
-            to: toId,
-            type: "inheritance" as const,
-          });
+          const relationKey = `${fromId}:${toId}:inheritance`;
+          if (!relationKeys.has(relationKey)) {
+            relationKeys.add(relationKey);
+            relations.push(
+              UMLRelationFactory.createInheritance(
+                (relCounter++).toString(),
+                fromId,
+                toId,
+              ),
+            );
+          }
+        }
+      }
+    }
+
+    for (const entity of this.entities) {
+      const fromId = entityToId.get(entity.name);
+      if (!fromId) {
+        continue;
+      }
+
+      for (const usedFunction of entity.usedFunctions ?? []) {
+        const toId = functionToId.get(usedFunction);
+        if (!toId || toId === fromId) {
+          continue;
+        }
+
+        const relationKey = `${fromId}:${toId}:dependency`;
+        if (!relationKeys.has(relationKey)) {
+          relationKeys.add(relationKey);
+          relations.push(
+            UMLRelationFactory.createDependency(
+              (relCounter++).toString(),
+              fromId,
+              toId,
+            ),
+          );
         }
       }
     }

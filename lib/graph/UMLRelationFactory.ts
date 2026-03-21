@@ -11,6 +11,15 @@ export class UMLRelationFactory {
     };
   }
 
+  static createDependency(id: string, from: string, to: string): UMLRelation {
+    return {
+      id,
+      from,
+      to,
+      type: "dependency",
+    };
+  }
+
   static createFromClass(
     superClass: ClassInfo,
     classId: string,

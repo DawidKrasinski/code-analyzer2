@@ -2,6 +2,75 @@ import type { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 import { ClassInfo, ComponentInfo } from "../models";
 
+function isNestedScope(node: t.Node): boolean {
+  return (
+    t.isFunctionDeclaration(node) ||
+    t.isFunctionExpression(node) ||
+    t.isArrowFunctionExpression(node) ||
+    t.isClassDeclaration(node) ||
+    t.isClassExpression(node)
+  );
+}
+
+function isNodeLike(value: unknown): value is t.Node {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    "type" in value &&
+    typeof (value as { type?: unknown }).type === "string"
+  );
+}
+
+function collectUsedFunctions(node: t.Node | null | undefined): string[] {
+  if (!node) {
+    return [];
+  }
+
+  const calledFunctions = new Set<string>();
+
+  const visit = (currentNode: t.Node | null | undefined, isRoot = false) => {
+    if (!currentNode) {
+      return;
+    }
+
+    if (!isRoot && isNestedScope(currentNode)) {
+      return;
+    }
+
+    if (
+      t.isCallExpression(currentNode) ||
+      t.isOptionalCallExpression(currentNode)
+    ) {
+      const callee = currentNode.callee;
+      if (t.isIdentifier(callee)) {
+        calledFunctions.add(callee.name);
+      }
+    }
+
+    const visitorKeys = t.VISITOR_KEYS[currentNode.type] ?? [];
+
+    for (const key of visitorKeys) {
+      const value = currentNode[key as keyof t.Node];
+
+      if (Array.isArray(value)) {
+        for (const child of value) {
+          if (isNodeLike(child)) {
+            visit(child);
+          }
+        }
+        continue;
+      }
+
+      if (isNodeLike(value)) {
+        visit(value);
+      }
+    }
+  };
+
+  visit(node, true);
+  return [...calledFunctions];
+}
+
 function isComponentClass(
   className: string,
   superClass: t.Expression | null | undefined,
@@ -43,9 +112,14 @@ export class ClassExtractor {
 
     const methods: string[] = [];
     const properties: string[] = [];
+    const usedFunctions = new Set<string>();
 
     path.node.body.body.forEach((classElement) => {
       if (t.isClassMethod(classElement)) {
+        for (const functionName of collectUsedFunctions(classElement.body)) {
+          usedFunctions.add(functionName);
+        }
+
         if (t.isIdentifier(classElement.key)) {
           const name = classElement.key.name;
           const accessibility = (classElement as any).accessibility;
@@ -56,6 +130,10 @@ export class ClassExtractor {
           else methods.push(name);
         }
       } else if (t.isClassProperty(classElement)) {
+        for (const functionName of collectUsedFunctions(classElement.value)) {
+          usedFunctions.add(functionName);
+        }
+
         if (t.isIdentifier(classElement.key)) {
           const name = classElement.key.name;
           const accessibility = (classElement as any).accessibility;
@@ -79,6 +157,7 @@ export class ClassExtractor {
         methods,
         properties,
         path: pathParts,
+        usedFunctions: [...usedFunctions],
       };
     }
 
@@ -89,6 +168,7 @@ export class ClassExtractor {
       methods,
       properties,
       path: pathParts,
+      usedFunctions: [...usedFunctions],
     };
   }
 }

@@ -12,6 +12,7 @@ describe("Generator", () => {
         methods: ["method1"],
         properties: ["prop1"],
         path: ["A.ts"],
+        usedFunctions: ["doWork"],
       },
       {
         kind: "class",
@@ -81,6 +82,12 @@ describe("Generator", () => {
           from: "2",
           to: "1",
           type: "inheritance",
+        },
+        {
+          id: "2",
+          from: "1",
+          to: "3",
+          type: "dependency",
         },
       ],
     } as UMLGraph);

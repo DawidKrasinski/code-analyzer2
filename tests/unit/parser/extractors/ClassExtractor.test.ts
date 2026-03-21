@@ -5,7 +5,7 @@ import { ClassExtractor } from "../../../../lib/parser/extractors/ClassExtractor
 
 describe("ClassExtractor", () => {
   it("extracts class data", () => {
-    const code = `class A { private x = 1; y = 2; protected method() {} }`;
+    const code = `class A { private x = createValue(); y = 2; protected method() { helper(); const nested = () => ignored(); } }`;
     const ast = parser.parse(code, {
       sourceType: "module",
       plugins: ["typescript"],
@@ -23,6 +23,7 @@ describe("ClassExtractor", () => {
       name: "A",
       properties: expect.arrayContaining(["private x", "y"]),
       methods: expect.arrayContaining(["protected method"]),
+      usedFunctions: expect.arrayContaining(["createValue", "helper"]),
     });
   });
 });

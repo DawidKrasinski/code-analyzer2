@@ -4,6 +4,7 @@ export type FunctionInfo = {
   path: string[];
   args: string[];
   returnType: string | null;
+  usedFunctions?: string[];
 };
 
 export type ClassInfo = {
@@ -13,6 +14,7 @@ export type ClassInfo = {
   methods: string[];
   properties: string[];
   path: string[];
+  usedFunctions?: string[];
 };
 
 export type ComponentInfo = {
@@ -22,6 +24,7 @@ export type ComponentInfo = {
   methods: string[];
   properties: string[];
   path: string[];
+  usedFunctions?: string[];
 };
 
 export type CodeEntity = ClassInfo | ComponentInfo | FunctionInfo;

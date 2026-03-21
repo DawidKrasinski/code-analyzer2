@@ -8,17 +8,29 @@ describe("ParserFacade", () => {
       const fileA = path.join(tmpDir, "A.ts");
       makeFile(
         fileA,
-        `export class A { p = 1; method() { return 1; } }\nexport function f(x: string) { return x; }\n`,
+        `export function helper() { return 1; }\nexport class A { p = helper(); method() { return helper(); } }\nexport function f(x: string) { helper(); return x; }\n`,
       );
 
       const entities = new ParserFacade([fileA]).getEntities();
       expect(entities).toEqual(
         expect.arrayContaining([
+          expect.objectContaining({ kind: "function", name: "helper" }),
           expect.objectContaining({ kind: "class", name: "A" }),
           expect.objectContaining({
             kind: "function",
             name: "f",
             args: ["x: string"],
+            usedFunctions: ["helper"],
+          }),
+        ]),
+      );
+
+      expect(entities).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            kind: "class",
+            name: "A",
+            usedFunctions: expect.arrayContaining(["helper"]),
           }),
         ]),
       );
