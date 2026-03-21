@@ -9,15 +9,11 @@ export class GraphGenerator {
     const nodes = [];
     const relations = [];
     const entityToId = new Map<string, string>();
-    const functionToId = new Map<string, string>();
     let idCounter = 1;
 
     for (const entity of this.entities) {
       const id = (idCounter++).toString();
       entityToId.set(entity.name, id);
-      if (entity.kind === "function") {
-        functionToId.set(entity.name, id);
-      }
       nodes.push(UMLNodeFactory.create(entity, id));
     }
 
@@ -50,13 +46,15 @@ export class GraphGenerator {
         continue;
       }
 
-      for (const usedFunction of entity.usedFunctions ?? []) {
-        const toId = functionToId.get(usedFunction);
+      for (const usedEntity of entity.usedFunctions ?? []) {
+        // Look for the used entity in all entities (classes, components, functions)
+        // not just functions
+        const toId = entityToId.get(usedEntity);
         if (!toId || toId === fromId) {
           continue;
         }
 
-        const relationKey = `${fromId}:${toId}:dependency`;
+        const relationKey = `${fromId}:${toId}:usage`;
         if (!relationKeys.has(relationKey)) {
           relationKeys.add(relationKey);
           relations.push(

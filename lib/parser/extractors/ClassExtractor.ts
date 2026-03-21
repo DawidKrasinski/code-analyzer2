@@ -21,54 +21,91 @@ function isNodeLike(value: unknown): value is t.Node {
   );
 }
 
-function collectUsedFunctions(node: t.Node | null | undefined): string[] {
+function collectUsedEntities(node: t.Node | null | undefined): string[] {
   if (!node) {
     return [];
   }
 
-  const calledFunctions = new Set<string>();
+  const usedEntities = new Set<string>();
+  const localDeclarations = new Set<string>();
 
+  // First pass: collect locally declared names (function/class declarations)
+  const collectLocalDeclarations = (currentNode: t.Node | null | undefined, isRoot = false) => {
+    if (!currentNode) return;
+    if (!isRoot && isNestedScope(currentNode)) return;
+
+    // Collect function/class declarations
+    if (t.isFunctionDeclaration(currentNode) && t.isIdentifier(currentNode.id)) {
+      localDeclarations.add(currentNode.id.name);
+    } else if (t.isClassDeclaration(currentNode) && t.isIdentifier(currentNode.id)) {
+      localDeclarations.add(currentNode.id.name);
+    }
+
+    const visitorKeys = t.VISITOR_KEYS[currentNode.type] ?? [];
+    for (const key of visitorKeys) {
+      const value = currentNode[key as keyof t.Node];
+      if (Array.isArray(value)) {
+        for (const child of value) {
+          if (isNodeLike(child)) collectLocalDeclarations(child, false);
+        }
+      } else if (isNodeLike(value)) {
+        collectLocalDeclarations(value, false);
+      }
+    }
+  };
+
+  // Second pass: collect used entities
   const visit = (currentNode: t.Node | null | undefined, isRoot = false) => {
-    if (!currentNode) {
-      return;
-    }
+    if (!currentNode) return;
+    if (!isRoot && isNestedScope(currentNode)) return;
 
-    if (!isRoot && isNestedScope(currentNode)) {
-      return;
-    }
-
-    if (
-      t.isCallExpression(currentNode) ||
-      t.isOptionalCallExpression(currentNode)
-    ) {
+    // Collect function calls: funcName()
+    if (t.isCallExpression(currentNode) || t.isOptionalCallExpression(currentNode)) {
       const callee = currentNode.callee;
       if (t.isIdentifier(callee)) {
-        calledFunctions.add(callee.name);
+        if (!localDeclarations.has(callee.name)) {
+          usedEntities.add(callee.name);
+        }
+      }
+    }
+
+    // Collect JSX element usage: <ComponentName />
+    if (t.isJSXElement(currentNode)) {
+      const openingElement = currentNode.openingElement;
+      if (t.isJSXIdentifier(openingElement.name)) {
+        const name = openingElement.name.name;
+        if (!localDeclarations.has(name)) {
+          usedEntities.add(name);
+        }
+      }
+    }
+
+    // Collect class instantiation: new ClassName()
+    if (t.isNewExpression(currentNode)) {
+      const callee = currentNode.callee;
+      if (t.isIdentifier(callee)) {
+        if (!localDeclarations.has(callee.name)) {
+          usedEntities.add(callee.name);
+        }
       }
     }
 
     const visitorKeys = t.VISITOR_KEYS[currentNode.type] ?? [];
-
     for (const key of visitorKeys) {
       const value = currentNode[key as keyof t.Node];
-
       if (Array.isArray(value)) {
         for (const child of value) {
-          if (isNodeLike(child)) {
-            visit(child);
-          }
+          if (isNodeLike(child)) visit(child);
         }
-        continue;
-      }
-
-      if (isNodeLike(value)) {
+      } else if (isNodeLike(value)) {
         visit(value);
       }
     }
   };
 
+  collectLocalDeclarations(node);
   visit(node, true);
-  return [...calledFunctions];
+  return [...usedEntities];
 }
 
 function isComponentClass(
@@ -116,8 +153,8 @@ export class ClassExtractor {
 
     path.node.body.body.forEach((classElement) => {
       if (t.isClassMethod(classElement)) {
-        for (const functionName of collectUsedFunctions(classElement.body)) {
-          usedFunctions.add(functionName);
+        for (const entityName of collectUsedEntities(classElement.body)) {
+          usedFunctions.add(entityName);
         }
 
         if (t.isIdentifier(classElement.key)) {
@@ -130,8 +167,8 @@ export class ClassExtractor {
           else methods.push(name);
         }
       } else if (t.isClassProperty(classElement)) {
-        for (const functionName of collectUsedFunctions(classElement.value)) {
-          usedFunctions.add(functionName);
+        for (const entityName of collectUsedEntities(classElement.value)) {
+          usedFunctions.add(entityName);
         }
 
         if (t.isIdentifier(classElement.key)) {
