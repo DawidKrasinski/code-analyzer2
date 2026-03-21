@@ -87,7 +87,7 @@ describe("Generator", () => {
           id: "2",
           from: "1",
           to: "3",
-          type: "dependency",
+          type: "usage",
         },
       ],
     } as UMLGraph);

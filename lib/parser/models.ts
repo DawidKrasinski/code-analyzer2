@@ -53,7 +53,8 @@ export type RelationType =
   | "association"
   | "aggregation"
   | "composition"
-  | "dependency";
+  | "dependency"
+  | "usage";
 
 export interface UMLRelation {
   id: string;

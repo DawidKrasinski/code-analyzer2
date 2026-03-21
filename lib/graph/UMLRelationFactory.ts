@@ -20,6 +20,15 @@ export class UMLRelationFactory {
     };
   }
 
+  static createUsage(id: string, from: string, to: string): UMLRelation {
+    return {
+      id,
+      from,
+      to,
+      type: "usage",
+    };
+  }
+
   static createFromClass(
     superClass: ClassInfo,
     classId: string,

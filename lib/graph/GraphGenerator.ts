@@ -60,7 +60,7 @@ export class GraphGenerator {
         if (!relationKeys.has(relationKey)) {
           relationKeys.add(relationKey);
           relations.push(
-            UMLRelationFactory.createDependency(
+            UMLRelationFactory.createUsage(
               (relCounter++).toString(),
               fromId,
               toId,

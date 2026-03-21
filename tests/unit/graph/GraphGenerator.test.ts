@@ -35,8 +35,8 @@ describe("GraphGenerator", () => {
     expect(g.nodes).toHaveLength(3);
     expect(g.relations).toEqual([
       { id: "1", from: "2", to: "1", type: "inheritance" },
-      { id: "2", from: "1", to: "3", type: "dependency" },
-      { id: "3", from: "2", to: "3", type: "dependency" },
+      { id: "2", from: "1", to: "3", type: "usage" },
+      { id: "3", from: "2", to: "3", type: "usage" },
     ]);
   });
 });
