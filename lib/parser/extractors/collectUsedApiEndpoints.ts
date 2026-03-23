@@ -93,8 +93,11 @@ export function collectUsedApiEndpoints(
 
   const usedApiEndpoints = new Set<string>();
 
-  const visit = (currentNode: t.Node | null | undefined): void => {
-    if (!currentNode) return;
+  const stack: t.Node[] = [node];
+
+  while (stack.length > 0) {
+    const currentNode = stack.pop();
+    if (!currentNode) continue;
 
     if (t.isCallExpression(currentNode) && isFetchCall(currentNode.callee)) {
       const route = readStaticString(
@@ -116,16 +119,14 @@ export function collectUsedApiEndpoints(
       if (Array.isArray(value)) {
         for (const child of value) {
           if (isNodeLike(child)) {
-            visit(child);
+            stack.push(child);
           }
         }
       } else if (isNodeLike(value)) {
-        visit(value);
+        stack.push(value);
       }
     }
-  };
-
-  visit(node);
+  }
 
   return [...usedApiEndpoints];
 }

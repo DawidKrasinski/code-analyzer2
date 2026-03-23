@@ -20,9 +20,14 @@ export type ClassInfo = {
   kind: "class";
   name: string;
   superClass: string | null;
+  implements?: string[];
   methods: string[];
   properties: string[];
   path: string[];
+  newExpressions?: string[];
+  constructorParamTypes?: string[];
+  propertyTypes?: string[];
+  methodParamTypes?: string[];
   usedFunctions?: string[];
   usedApiEndpoints?: string[];
 };
@@ -31,9 +36,14 @@ export type ComponentInfo = {
   kind: "component";
   name: string;
   superClass: string | null;
+  implements?: string[];
   methods: string[];
   properties: string[];
   path: string[];
+  newExpressions?: string[];
+  constructorParamTypes?: string[];
+  propertyTypes?: string[];
+  methodParamTypes?: string[];
   usedFunctions?: string[];
   usedApiEndpoints?: string[];
 };
@@ -49,6 +59,7 @@ export type UMLNodeType =
   | "interface"
   | "abstract"
   | "function"
+  | "api-endpoint"
   | "component"
   | "variable";
 
@@ -70,7 +81,6 @@ export type RelationType =
   | "aggregation"
   | "composition"
   | "dependency"
-  | "usage"
   | "api-usage";
 
 export interface UMLRelation {

@@ -1,6 +1,8 @@
 import { UMLNode } from "../parser/models";
 import { CodeEntity } from "../parser/models";
 
+const API_HANDLER_REGEX = /^(GET|POST|PUT|PATCH|DELETE) \/api(?:\/.*)?$/;
+
 export class UMLNodeFactory {
   static create(entity: CodeEntity, id: string): UMLNode {
     if (entity.kind === "class") {
@@ -37,7 +39,7 @@ export class UMLNodeFactory {
     return {
       id,
       name: entity.name,
-      type: "function",
+      type: API_HANDLER_REGEX.test(entity.name) ? "api-endpoint" : "function",
       path: entity.path,
       args: entity.args,
       returnType: entity.returnType,

@@ -85,10 +85,6 @@ export class ParserFacade {
     method: string,
     apiRoute: string,
   ): string {
-    if (method === "GET") {
-      return "GET";
-    }
-
     return `${method} ${apiRoute}`;
   }
 

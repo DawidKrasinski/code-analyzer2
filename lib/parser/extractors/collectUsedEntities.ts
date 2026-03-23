@@ -211,14 +211,21 @@ export function collectUsedEntities(
 
   collectLocalDeclarations(node, localDeclarations, true, skipNestedScopes);
 
-  const visit = (
-    currentNode: t.Node | null | undefined,
-    parent: t.Node | null,
-    key: string | null,
-    isRoot: boolean,
-  ): void => {
-    if (!currentNode) return;
-    if (skipNestedScopes && !isRoot && isNestedScope(currentNode)) return;
+  const stack: Array<{
+    currentNode: t.Node;
+    parent: t.Node | null;
+    key: string | null;
+    isRoot: boolean;
+  }> = [{ currentNode: node, parent: null, key: null, isRoot: true }];
+
+  while (stack.length > 0) {
+    const frame = stack.pop();
+    if (!frame) continue;
+
+    const { currentNode, parent, key, isRoot } = frame;
+    if (skipNestedScopes && !isRoot && isNestedScope(currentNode)) {
+      continue;
+    }
 
     if (t.isIdentifier(currentNode)) {
       const isRootIdentifier = parent === null;
@@ -247,16 +254,24 @@ export function collectUsedEntities(
       if (Array.isArray(value)) {
         for (const child of value) {
           if (isNodeLike(child)) {
-            visit(child, currentNode, childKey, false);
+            stack.push({
+              currentNode: child,
+              parent: currentNode,
+              key: childKey,
+              isRoot: false,
+            });
           }
         }
       } else if (isNodeLike(value)) {
-        visit(value, currentNode, childKey, false);
+        stack.push({
+          currentNode: value,
+          parent: currentNode,
+          key: childKey,
+          isRoot: false,
+        });
       }
     }
-  };
-
-  visit(node, null, null, true);
+  }
 
   return [...usedEntities];
 }

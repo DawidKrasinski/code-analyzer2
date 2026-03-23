@@ -165,16 +165,185 @@ class ParserFacadeLike {
 
       const entities = new ParserFacade([indexFile, routeFile]).getEntities();
       const getHandler = entities.find(
-        (entity) => entity.kind === "function" && entity.name === "GET",
+        (entity) => entity.kind === "function" && entity.name === "GET /api",
       );
 
       expect(getHandler).toEqual(
         expect.objectContaining({
           kind: "function",
-          name: "GET",
+          name: "GET /api",
           usedFunctions: expect.arrayContaining(["start"]),
         }),
       );
     });
+  });
+
+  it("tracks getFetchMethod dependency from collectUsedApiEndpoints extractor", () => {
+    const file = path.resolve(
+      process.cwd(),
+      "lib",
+      "parser",
+      "extractors",
+      "collectUsedApiEndpoints.ts",
+    );
+
+    const entities = new ParserFacade([file]).getEntities();
+    const collector = entities.find(
+      (entity) =>
+        entity.kind === "function" && entity.name === "collectUsedApiEndpoints",
+    );
+
+    expect(collector).toEqual(
+      expect.objectContaining({
+        kind: "function",
+        name: "collectUsedApiEndpoints",
+        usedFunctions: expect.arrayContaining(["getFetchMethod"]),
+      }),
+    );
+  });
+
+  it("tracks isNodeLike dependency from collectUsedApiEndpoints extractor", () => {
+    const file = path.resolve(
+      process.cwd(),
+      "lib",
+      "parser",
+      "extractors",
+      "collectUsedApiEndpoints.ts",
+    );
+
+    const entities = new ParserFacade([file]).getEntities();
+    const collector = entities.find(
+      (entity) =>
+        entity.kind === "function" && entity.name === "collectUsedApiEndpoints",
+    );
+
+    expect(collector).toEqual(
+      expect.objectContaining({
+        kind: "function",
+        name: "collectUsedApiEndpoints",
+        usedFunctions: expect.arrayContaining(["isNodeLike"]),
+      }),
+    );
+  });
+
+  it("tracks shouldCountIdentifierAsUsage dependency from collectUsedEntities extractor", () => {
+    const file = path.resolve(
+      process.cwd(),
+      "lib",
+      "parser",
+      "extractors",
+      "collectUsedEntities.ts",
+    );
+
+    const entities = new ParserFacade([file]).getEntities();
+    const collector = entities.find(
+      (entity) =>
+        entity.kind === "function" && entity.name === "collectUsedEntities",
+    );
+
+    expect(collector).toEqual(
+      expect.objectContaining({
+        kind: "function",
+        name: "collectUsedEntities",
+        usedFunctions: expect.arrayContaining(["shouldCountIdentifierAsUsage"]),
+      }),
+    );
+  });
+
+  it("tracks isNodeLike dependency from collectUsedEntities extractor", () => {
+    const file = path.resolve(
+      process.cwd(),
+      "lib",
+      "parser",
+      "extractors",
+      "collectUsedEntities.ts",
+    );
+
+    const entities = new ParserFacade([file]).getEntities();
+    const collector = entities.find(
+      (entity) =>
+        entity.kind === "function" && entity.name === "collectUsedEntities",
+    );
+
+    expect(collector).toEqual(
+      expect.objectContaining({
+        kind: "function",
+        name: "collectUsedEntities",
+        usedFunctions: expect.arrayContaining(["isNodeLike"]),
+      }),
+    );
+  });
+
+  it("captures helper relations and recursion for collectParamNamesFromPattern", () => {
+    const file = path.resolve(
+      process.cwd(),
+      "lib",
+      "parser",
+      "extractors",
+      "ClassExtractor.ts",
+    );
+
+    const entities = new ParserFacade([file]).getEntities();
+    const helperFn = entities.find(
+      (entity) =>
+        entity.kind === "function" &&
+        entity.name === "collectParamNamesFromPattern",
+    );
+    const classExtractor = entities.find(
+      (entity) => entity.kind === "class" && entity.name === "ClassExtractor",
+    );
+
+    expect(helperFn).toEqual(
+      expect.objectContaining({
+        kind: "function",
+        name: "collectParamNamesFromPattern",
+        usedFunctions: expect.arrayContaining(["collectParamNamesFromPattern"]),
+      }),
+    );
+
+    expect(classExtractor).toEqual(
+      expect.objectContaining({
+        kind: "class",
+        name: "ClassExtractor",
+        usedFunctions: expect.arrayContaining(["collectParamNamesFromPattern"]),
+      }),
+    );
+  });
+
+  it("captures helper relations and recursion for FunctionExtractor collectParamNamesFromPattern", () => {
+    const file = path.resolve(
+      process.cwd(),
+      "lib",
+      "parser",
+      "extractors",
+      "FunctionExtractor.ts",
+    );
+
+    const entities = new ParserFacade([file]).getEntities();
+    const helperFn = entities.find(
+      (entity) =>
+        entity.kind === "function" &&
+        entity.name === "collectParamNamesFromPattern",
+    );
+    const functionExtractor = entities.find(
+      (entity) =>
+        entity.kind === "class" && entity.name === "FunctionExtractor",
+    );
+
+    expect(helperFn).toEqual(
+      expect.objectContaining({
+        kind: "function",
+        name: "collectParamNamesFromPattern",
+        usedFunctions: expect.arrayContaining(["collectParamNamesFromPattern"]),
+      }),
+    );
+
+    expect(functionExtractor).toEqual(
+      expect.objectContaining({
+        kind: "class",
+        name: "FunctionExtractor",
+        usedFunctions: expect.arrayContaining(["collectParamNamesFromPattern"]),
+      }),
+    );
   });
 });

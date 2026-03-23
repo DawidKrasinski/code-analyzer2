@@ -11,21 +11,52 @@ export class UMLRelationFactory {
     };
   }
 
+  static createImplementation(
+    id: string,
+    from: string,
+    to: string,
+  ): UMLRelation {
+    return {
+      id,
+      from,
+      to,
+      type: "implementation",
+    };
+  }
+
+  static createAssociation(id: string, from: string, to: string): UMLRelation {
+    return {
+      id,
+      from,
+      to,
+      type: "association",
+    };
+  }
+
+  static createAggregation(id: string, from: string, to: string): UMLRelation {
+    return {
+      id,
+      from,
+      to,
+      type: "aggregation",
+    };
+  }
+
+  static createComposition(id: string, from: string, to: string): UMLRelation {
+    return {
+      id,
+      from,
+      to,
+      type: "composition",
+    };
+  }
+
   static createDependency(id: string, from: string, to: string): UMLRelation {
     return {
       id,
       from,
       to,
       type: "dependency",
-    };
-  }
-
-  static createUsage(id: string, from: string, to: string): UMLRelation {
-    return {
-      id,
-      from,
-      to,
-      type: "usage",
     };
   }
 
